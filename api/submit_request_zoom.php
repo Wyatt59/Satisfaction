@@ -42,34 +42,52 @@ if ($nom === '' || !preg_match('/^[0-9]{5}$/', $agent) || $service === '' || !in
     exit;
 }
 
-$site  = getSiteZoomRoom($pdo);
-$email = lookupAgentEmailInActiveDirectory($pdo, $agent);
-$token = bin2hex(random_bytes(32));
+// Toute erreur est renvoyée en JSON (et non en page d'erreur PHP) pour que
+// indexzoom.php affiche la cause réelle ; le détail est vérifiable sur test_mail.php.
+try {
+    $site  = getSiteZoomRoom($pdo);
+    $email = lookupAgentEmailInActiveDirectory($pdo, $agent);
+    $token = bin2hex(random_bytes(32));
 
-$stmt = $pdo->prepare(
-    'INSERT INTO demandes (nom_utilisateur, numero_agent, service, motif, detail_demande, date_creation, statut,
-                           site_id, canal, token_satisfaction, email_demandeur)
-     VALUES (:nom, :agent, :service, :motif, :detail, NOW(), "en_attente",
-             :site_id, "zoomroom", :token, :email)'
-);
+    $stmt = $pdo->prepare(
+        'INSERT INTO demandes (nom_utilisateur, numero_agent, service, motif, detail_demande, date_creation, statut,
+                               site_id, canal, token_satisfaction, email_demandeur)
+         VALUES (:nom, :agent, :service, :motif, :detail, NOW(), "en_attente",
+                 :site_id, "zoomroom", :token, :email)'
+    );
 
-$stmt->execute([
-    ':nom'     => $nom,
-    ':agent'   => $agent,
-    ':service' => $service,
-    ':motif'   => $motif,
-    ':detail'  => $detail,
-    ':site_id' => $site['id'],
-    ':token'   => $token,
-    ':email'   => $email,
-]);
+    $stmt->execute([
+        ':nom'     => $nom,
+        ':agent'   => $agent,
+        ':service' => $service,
+        ':motif'   => $motif,
+        ':detail'  => $detail,
+        ':site_id' => $site['id'],
+        ':token'   => $token,
+        ':email'   => $email,
+    ]);
+} catch (Throwable $e) {
+    error_log('Zoom Room : échec de l\'enregistrement de la demande : ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Erreur lors de l\'enregistrement : ' . $e->getMessage() . ' (voir test_mail.php)',
+    ]);
+    exit;
+}
 
 $id = (int)$pdo->lastInsertId();
 
+// La demande est enregistrée : un problème d'envoi d'e-mail ou de lecture du
+// lien de redirection ne doit pas faire échouer la validation.
 $mailEnvoye = false;
 if ($email !== null) {
-    $lienReponse = getAppBaseUrl() . '/reponsesatisfaction.php?token=' . $token;
-    $mailEnvoye  = envoyerMailSatisfactionZoom($email, $nom, $lienReponse);
+    try {
+        $lienReponse = getAppBaseUrl() . '/reponsesatisfaction.php?token=' . $token;
+        $mailEnvoye  = envoyerMailSatisfactionZoom($email, $nom, $lienReponse);
+    } catch (Throwable $e) {
+        error_log("Zoom Room : erreur lors de l'envoi de l'e-mail (demande #{$id}) : " . $e->getMessage());
+    }
     if (!$mailEnvoye) {
         error_log("Zoom Room : échec de l'envoi de l'e-mail de satisfaction (demande #{$id}).");
     }
@@ -77,9 +95,15 @@ if ($email !== null) {
     error_log("Zoom Room : adresse e-mail introuvable dans l'AD pour l'agent {$agent} (demande #{$id}).");
 }
 
+try {
+    $redirect = getLienZoomRoom($pdo);
+} catch (Throwable $e) {
+    $redirect = null;
+}
+
 echo json_encode([
     'success'     => true,
     'id'          => $id,
     'mail_envoye' => $mailEnvoye,
-    'redirect'    => getLienZoomRoom($pdo),
+    'redirect'    => $redirect,
 ]);

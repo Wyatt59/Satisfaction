@@ -166,7 +166,15 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
-        .then(r => r.json())
+        .then(r => r.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                // Réponse non JSON : erreur PHP côté serveur
+                return { success: false, message: 'Erreur du serveur (HTTP ' + r.status + ')' +
+                    (zoomMode ? ' : vérifiez la configuration sur test_mail.php.' : '.') };
+            }
+        }))
         .then(res => {
             if (res.success && zoomMode) {
                 resetForm();

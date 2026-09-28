@@ -286,3 +286,12 @@ Configuration :
 - dans `config.php`, ajouter `MAIL_FROM` (adresse d'expédition) et `APP_BASE_URL` (URL publique de
   l'application, recommandé) — voir `config.example.php` ;
 - PHP doit pouvoir envoyer des e-mails via `mail()` (`SMTP`/`smtp_port` sous Windows, `sendmail_path` sous Linux).
+
+#### Page de test (`test_mail.php`)
+
+Vérifie pas à pas tout ce dont `indexzoom.php` a besoin : extensions PHP (`mbstring`, `ldap`), colonnes
+de la base (avec la requête `ALTER TABLE` à exécuter si l'une manque), essai d'enregistrement d'une
+demande (annulé aussitôt), `lienzoomroom`, `MAIL_FROM`, `APP_BASE_URL` et paramètres d'envoi de
+`php.ini` (connexion au serveur SMTP sous Windows). Elle permet aussi de retrouver l'adresse e-mail
+d'un agent dans l'AD et d'envoyer un e-mail de test. Accessible via le lien « ✉️ Test e-mail » de la
+page Statistiques. À protéger ou supprimer après la mise en service, comme `ad_test.php`.
