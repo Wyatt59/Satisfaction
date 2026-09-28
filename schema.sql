@@ -22,7 +22,11 @@ CREATE TABLE IF NOT EXISTS demandes (
     statut          ENUM('en_attente','cloture') NOT NULL DEFAULT 'en_attente',
     type_cloture    ENUM('manuelle','automatique') NULL,
     site_id         INT NULL,
+    canal           ENUM('borne','zoomroom') NOT NULL DEFAULT 'borne',
+    token_satisfaction CHAR(64) NULL,
+    email_demandeur VARCHAR(255) NULL,
 
+    UNIQUE KEY uq_token_satisfaction (token_satisfaction),
     INDEX idx_statut (statut),
     INDEX idx_date_creation (date_creation),
     INDEX idx_site (site_id)
@@ -79,7 +83,8 @@ CREATE TABLE IF NOT EXISTS ad_config (
     agent_attribute    VARCHAR(100) NOT NULL DEFAULT 'sAMAccountName',
     name_attribute     VARCHAR(100) NOT NULL DEFAULT 'displayName',
     affichage_stat     VARCHAR(100) NULL,
-    service_attribute  VARCHAR(100) NOT NULL DEFAULT 'ExtensionName'
+    service_attribute  VARCHAR(100) NOT NULL DEFAULT 'ExtensionName',
+    lienzoomroom       VARCHAR(500) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO ad_config (id, actif, host, port, use_tls, base_dn, bind_dn, bind_password_md5, agent_attribute, name_attribute, affichage_stat, service_attribute)
@@ -125,6 +130,27 @@ ON DUPLICATE KEY UPDATE id = id;
 -- fonctionnalité (colonne service_attribute déjà présente avec la valeur 'department') :
 -- mettre à jour vers l'attribut réellement utilisé par l'entreprise ('ExtensionName') :
 -- UPDATE ad_config SET service_attribute = 'ExtensionName' WHERE id = 1 AND service_attribute = 'department';
+
+-- ============================================================
+-- Canal Zoom Room (indexzoom.php / reponsesatisfaction.php)
+-- ============================================================
+-- Les demandes saisies depuis indexzoom.php (intervention à distance via Zoom
+-- Room, au domicile ou au bureau de l'agent) sont rattachées au site
+-- "ZoomRoom" (créé automatiquement au premier usage, ip_prefix = 'zoomroom')
+-- et ont canal = 'zoomroom'. Un e-mail contenant un lien unique
+-- (token_satisfaction) vers reponsesatisfaction.php est envoyé à l'adresse du
+-- demandeur récupérée dans l'AD (attribut "mail"). Après validation,
+-- indexzoom.php redirige vers l'URL renseignée dans ad_config.lienzoomroom.
+-- Ces demandes ne sont pas clôturées automatiquement à 17h (l'agent répond
+-- plus tard depuis son e-mail) mais au bout de 7 jours sans réponse.
+
+-- Migration pour une installation déjà existante (canal Zoom Room) :
+-- ALTER TABLE demandes ADD COLUMN canal ENUM('borne','zoomroom') NOT NULL DEFAULT 'borne' AFTER site_id;
+-- ALTER TABLE demandes ADD COLUMN token_satisfaction CHAR(64) NULL AFTER canal;
+-- ALTER TABLE demandes ADD COLUMN email_demandeur VARCHAR(255) NULL AFTER token_satisfaction;
+-- ALTER TABLE demandes ADD UNIQUE KEY uq_token_satisfaction (token_satisfaction);
+-- ALTER TABLE ad_config ADD COLUMN lienzoomroom VARCHAR(500) NULL AFTER service_attribute;
+-- UPDATE ad_config SET lienzoomroom = 'https://intranet.exemple.fr/page-apres-zoom' WHERE id = 1;
 
 -- Exemple de compte MySQL dédié (à adapter / sécuriser en production)
 -- CREATE USER 'kiosk_user'@'localhost' IDENTIFIED BY 'change_moi';

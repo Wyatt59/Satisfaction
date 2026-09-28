@@ -463,3 +463,48 @@ html, body {
     cursor: pointer;
     text-decoration: underline;
 }
+
+/* ---------- Canal Zoom Room : indexzoom.php (formulaire seul, centré) ---------- */
+
+.zoom-wrapper { justify-content: center; }
+.zoom-wrapper .form-panel { flex: 0 1 760px; }
+
+/* ---------- Canal Zoom Room : reponsesatisfaction.php (lien reçu par e-mail) ---------- */
+
+html:has(body.reponse-page),
+body.reponse-page {
+    overflow: auto;
+    -webkit-user-select: auto;
+    user-select: auto;
+}
+
+.reponse-page { padding: 40px 16px; }
+.reponse-page .hidden { display: none; }
+
+.reponse-panel {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.reponse-body { padding: 26px 30px; text-align: center; }
+
+.reponse-intro { font-size: 15px; line-height: 1.6; margin: 0 0 18px; }
+.reponse-question { font-size: 19px; font-weight: 600; margin: 0 0 20px; }
+
+.reponse-smileys {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin-bottom: 10px;
+}
+.reponse-smileys .smiley-btn { width: 110px; height: 110px; }
+
+.reponse-message { font-size: 17px; line-height: 1.6; padding: 10px 0; }
+.reponse-message p { margin: 6px 0; }
+.reponse-message .hint { font-size: 14px; color: var(--muted); }
+.reponse-message-icon { font-size: 44px; margin-bottom: 8px; }
+
+.reponse-page .comment-overlay { align-items: center; }
+.reponse-page .comment-overlay .touch-input { -webkit-user-select: text; user-select: text; }
+
+.btn:disabled { opacity: 0.6; cursor: default; }

@@ -46,7 +46,13 @@
     const btnValider = document.getElementById('btn-valider');
     const formMessage = document.getElementById('form-message');
 
-    const textInputs = [nomInput, agentInput, serviceInput, detailInput, commentInput];
+    // Mode Zoom Room (indexzoom.php) : pas de liste des demandes en attente,
+    // enregistrement via une API dédiée puis redirection éventuelle.
+    const zoomMode = document.body.dataset.mode === 'zoom';
+    const submitUrl = zoomMode ? 'api/submit_request_zoom.php' : 'api/submit_request.php';
+
+    // commentInput n'existe pas sur indexzoom.php (pas de clôture sur place)
+    const textInputs = [nomInput, agentInput, serviceInput, detailInput, commentInput].filter(Boolean);
     let nomAutoFilled = false;
     let serviceAutoFilled = false;
 
@@ -153,22 +159,37 @@
             return;
         }
 
-        fetch('api/submit_request.php', {
+        btnValider.disabled = true;
+
+        fetch(submitUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
         .then(r => r.json())
         .then(res => {
-            if (res.success) {
+            if (res.success && zoomMode) {
+                resetForm();
+                if (res.redirect) {
+                    window.location.href = res.redirect;
+                    return;
+                }
+                showFormMessage(res.mail_envoye
+                    ? 'Demande enregistrée. Un e-mail vous a été envoyé pour donner votre avis.'
+                    : 'Demande enregistrée.', 'success');
+            } else if (res.success) {
                 showFormMessage('Demande enregistrée. Merci de revenir sur la borne après votre rendez-vous.', 'success');
                 resetForm();
                 loadPendingList();
             } else {
                 showFormMessage(res.message || 'Erreur lors de l\'enregistrement.', 'error');
             }
+            btnValider.disabled = false;
         })
-        .catch(() => showFormMessage('Erreur de connexion au serveur.', 'error'));
+        .catch(() => {
+            btnValider.disabled = false;
+            showFormMessage('Erreur de connexion au serveur.', 'error');
+        });
     });
 
     // ============================================================
@@ -219,7 +240,7 @@
 
     let pendingClose = null; // { id, satisfaction } en attente de commentaire
 
-    pendingListEl.addEventListener('click', (e) => {
+    if (pendingListEl) pendingListEl.addEventListener('click', (e) => {
         const btn = e.target.closest('.smiley-btn');
         if (!btn) return;
         const id = btn.getAttribute('data-id');
@@ -231,6 +252,11 @@
             openCommentModal(id, type);
         }
     });
+
+    function onClick(id, handler) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('click', handler);
+    }
 
     const commentOverlay = document.getElementById('comment-overlay');
     const commentIconEl = document.getElementById('comment-icon');
@@ -249,14 +275,14 @@
         pendingClose = null;
     }
 
-    document.getElementById('btn-comment-skip').addEventListener('click', () => {
+    onClick('btn-comment-skip', () => {
         if (!pendingClose) return;
         const { id, satisfaction } = pendingClose;
         closeCommentModal();
         closeRequest(id, satisfaction, null);
     });
 
-    document.getElementById('btn-comment-submit').addEventListener('click', () => {
+    onClick('btn-comment-submit', () => {
         if (!pendingClose) return;
         const { id, satisfaction } = pendingClose;
         const commentaire = commentInput.value.trim();
@@ -264,7 +290,7 @@
         closeRequest(id, satisfaction, commentaire || null);
     });
 
-    document.getElementById('btn-comment-cancel').addEventListener('click', () => {
+    onClick('btn-comment-cancel', () => {
         closeCommentModal();
     });
 
@@ -293,6 +319,7 @@
     }
 
     function loadPendingList() {
+        if (!pendingListEl) return;
         fetch('api/get_pending.php')
             .then(r => r.json())
             .then(res => {
@@ -301,8 +328,10 @@
             .catch(() => {});
     }
 
-    loadPendingList();
-    setInterval(loadPendingList, 4000);
+    if (pendingListEl) {
+        loadPendingList();
+        setInterval(loadPendingList, 4000);
+    }
 
     // ============================================================
     // Clavier virtuel tactile (AZERTY)
