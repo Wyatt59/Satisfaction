@@ -47,3 +47,17 @@ try {
  */
 define('AD_BIND_PASSWORD', '');
 
+
+/**
+ * Canal Zoom Room (indexzoom.php) : paramètres d'envoi de l'e-mail de
+ * satisfaction.
+ *  - MAIL_FROM    : adresse d'expédition de l'e-mail envoyé au demandeur.
+ *  - APP_BASE_URL : URL publique de l'application, utilisée pour construire
+ *                   le lien vers reponsesatisfaction.php contenu dans l'e-mail
+ *                   (ex. 'https://support.exemple.fr/satisfaction'). Laissez
+ *                   vide pour la déduire automatiquement de la requête.
+ * Ces constantes sont facultatives : si elles sont absentes de config.php,
+ * des valeurs par défaut sont utilisées (voir includes/functions.php).
+ */
+define('MAIL_FROM', 'support-informatique@exemple.fr');
+define('APP_BASE_URL', '');

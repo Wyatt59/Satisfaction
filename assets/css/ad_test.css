@@ -122,3 +122,8 @@
 
 .ad-success { color: var(--green); font-size: 14.5px; font-weight: 600; }
 .ad-error { color: var(--red); font-size: 14.5px; font-weight: 600; }
+
+/* test_mail.php : étape fonctionnelle mais à vérifier */
+.step-icon.warn { background: var(--yellow, #e8b923); }
+.step-warn .step-label { color: #8a5a06; }
+.ad-search-form input[type="email"] { width: 320px; }

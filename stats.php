@@ -17,6 +17,7 @@
         <div class="header-links">
             <a href="confidentialite.php" class="btn-back">🔒 Confidentialité</a>
             <a href="ad_test.php" class="btn-back">🧪 Test AD</a>
+            <a href="test_mail.php" class="btn-back">✉️ Test e-mail</a>
             <a href="parametres.php" class="btn-back">⚙️ Paramètres</a>
             <a href="index.php" class="btn-back">← Retour à la borne</a>
         </div>

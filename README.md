@@ -263,3 +263,35 @@ Cette table permet ensuite de bâtir facilement un tableau de bord de statistiqu
 - Ajouter une authentification pour un éventuel écran d'administration/statistiques.
 - Restreindre l'accès réseau à la borne (pare-feu / VLAN dédié).
 - Ajouter une purge automatique (cron) des demandes clôturées anciennes si besoin d'archivage.
+
+## Canal Zoom Room (`indexzoom.php` / `reponsesatisfaction.php`)
+
+Pour les demandes d'intervention passant par le canal Zoom Room (au domicile ou au bureau de l'agent) :
+
+1. **`indexzoom.php`** : même formulaire que `index.php`, sans la liste « Demandes en attente ».
+   La demande est enregistrée sur le site **ZoomRoom** (créé automatiquement dans `sites`,
+   `ip_prefix = 'zoomroom'`) avec `canal = 'zoomroom'`.
+2. À la validation (`api/submit_request_zoom.php`), l'adresse e-mail du demandeur est récupérée dans
+   l'AD (attribut `mail`, à partir du numéro d'agent) et un e-mail lui est envoyé avec un lien unique
+   vers `reponsesatisfaction.php?token=...`. La page redirige ensuite vers l'URL renseignée dans
+   `ad_config.lienzoomroom` (si elle est vide, un simple message de confirmation s'affiche).
+3. **`reponsesatisfaction.php`** : le demandeur touche l'un des 3 visages, comme sur la borne
+   (motif facultatif pour neutre / insatisfait). La demande est alors clôturée
+   (`api/repondre_satisfaction.php`). Un lien ne peut servir qu'une fois.
+
+Les demandes Zoom Room ne sont pas clôturées automatiquement à 17h mais après 7 jours sans réponse.
+
+Configuration :
+- exécuter les migrations « canal Zoom Room » en fin de `schema.sql` et renseigner `ad_config.lienzoomroom` ;
+- dans `config.php`, ajouter `MAIL_FROM` (adresse d'expédition) et `APP_BASE_URL` (URL publique de
+  l'application, recommandé) — voir `config.example.php` ;
+- PHP doit pouvoir envoyer des e-mails via `mail()` (`SMTP`/`smtp_port` sous Windows, `sendmail_path` sous Linux).
+
+#### Page de test (`test_mail.php`)
+
+Vérifie pas à pas tout ce dont `indexzoom.php` a besoin : extensions PHP (`mbstring`, `ldap`), colonnes
+de la base (avec la requête `ALTER TABLE` à exécuter si l'une manque), essai d'enregistrement d'une
+demande (annulé aussitôt), `lienzoomroom`, `MAIL_FROM`, `APP_BASE_URL` et paramètres d'envoi de
+`php.ini` (connexion au serveur SMTP sous Windows). Elle permet aussi de retrouver l'adresse e-mail
+d'un agent dans l'AD et d'envoyer un e-mail de test. Accessible via le lien « ✉️ Test e-mail » de la
+page Statistiques. À protéger ou supprimer après la mise en service, comme `ad_test.php`.

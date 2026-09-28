@@ -408,3 +408,49 @@ function lookupAgentInActiveDirectory(PDO $pdo, string $numeroAgent): array
     ];
 }
 
+
+/**
+ * Retrouve l'adresse e-mail (attribut AD "mail") d'un agent à partir de son
+ * numéro d'agent, avec la même logique de recherche par suffixe que
+ * lookupAgentInActiveDirectory(). Utilisée par le canal Zoom Room pour
+ * envoyer l'e-mail de satisfaction au demandeur.
+ *
+ * Retourne null dès que l'adresse ne peut pas être déterminée de façon sûre
+ * (AD indisponible, agent introuvable ou ambigu, attribut absent/invalide).
+ */
+function lookupAgentEmailInActiveDirectory(PDO $pdo, string $numeroAgent): ?string
+{
+    $svc = connectAdService($pdo);
+    if ($svc === null) {
+        return null;
+    }
+    $conn = $svc['conn'];
+    $cfg = $svc['cfg'];
+
+    $agentAttr = $cfg['agent_attribute'] !== '' ? $cfg['agent_attribute'] : 'sAMAccountName';
+    $mailAttr  = 'mail';
+
+    $safeAgent = ldap_escape($numeroAgent, '', LDAP_ESCAPE_FILTER);
+    $filter = '(' . $agentAttr . '=*' . $safeAgent . ')';
+
+    $search = @ldap_search($conn, $cfg['base_dn'], $filter, [$agentAttr, $mailAttr]);
+    if (!$search) {
+        return null;
+    }
+
+    $entries = @ldap_get_entries($conn, $search);
+    $count = $entries ? (int)$entries['count'] : 0;
+    if ($count === 0) {
+        return null;
+    }
+
+    // Même règle que pour le nom : en cas de plusieurs comptes, celui dont
+    // l'attribut agent est le plus court (et qui possède une adresse e-mail).
+    $entry = $count === 1
+        ? $entries[0]
+        : selectBestAdEntry($entries, $count, strtolower($agentAttr), $mailAttr);
+
+    $mail = trim((string)($entry[$mailAttr][0] ?? ''));
+
+    return filter_var($mail, FILTER_VALIDATE_EMAIL) ? $mail : null;
+}
