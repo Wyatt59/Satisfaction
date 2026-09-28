@@ -48,23 +48,41 @@ function runMailDiagnostics(PDO $pdo): array
     // ------------------------------------------------------------
     $section('Base de données (migrations « canal Zoom Room » de schema.sql)');
 
+    // [table, colonne, définition attendue, contrôle du type, migration si absente]
     $colonnes = [
-        ['demandes', 'canal', "ALTER TABLE demandes ADD COLUMN canal ENUM('borne','zoomroom') NOT NULL DEFAULT 'borne' AFTER site_id;"],
-        ['demandes', 'token_satisfaction', 'ALTER TABLE demandes ADD COLUMN token_satisfaction CHAR(64) NULL AFTER canal; ALTER TABLE demandes ADD UNIQUE KEY uq_token_satisfaction (token_satisfaction);'],
-        ['demandes', 'email_demandeur', 'ALTER TABLE demandes ADD COLUMN email_demandeur VARCHAR(255) NULL AFTER token_satisfaction;'],
-        ['ad_config', 'lienzoomroom', 'ALTER TABLE ad_config ADD COLUMN lienzoomroom VARCHAR(500) NULL AFTER service_attribute;'],
+        ['demandes', 'canal', "ENUM('borne','zoomroom') NOT NULL DEFAULT 'borne'",
+            fn(array $c) => str_contains($c['COLUMN_TYPE'], "'borne'") && str_contains($c['COLUMN_TYPE'], "'zoomroom'"),
+            "ALTER TABLE demandes ADD COLUMN canal ENUM('borne','zoomroom') NOT NULL DEFAULT 'borne' AFTER site_id;"],
+        ['demandes', 'token_satisfaction', 'CHAR(64) NULL',
+            fn(array $c) => (int)$c['CHARACTER_MAXIMUM_LENGTH'] >= 64,
+            'ALTER TABLE demandes ADD COLUMN token_satisfaction CHAR(64) NULL AFTER canal; ALTER TABLE demandes ADD UNIQUE KEY uq_token_satisfaction (token_satisfaction);'],
+        ['demandes', 'email_demandeur', 'VARCHAR(255) NULL',
+            fn(array $c) => (int)$c['CHARACTER_MAXIMUM_LENGTH'] >= 255,
+            'ALTER TABLE demandes ADD COLUMN email_demandeur VARCHAR(255) NULL AFTER token_satisfaction;'],
+        ['ad_config', 'lienzoomroom', 'VARCHAR(500) NULL',
+            fn(array $c) => (int)$c['CHARACTER_MAXIMUM_LENGTH'] >= 500,
+            'ALTER TABLE ad_config ADD COLUMN lienzoomroom VARCHAR(500) NULL AFTER service_attribute;'],
     ];
     $colonnesOk = true;
-    foreach ($colonnes as [$table, $colonne, $migration]) {
+    foreach ($colonnes as [$table, $colonne, $definition, $typeOk, $migration]) {
         $stmt = $pdo->prepare(
-            'SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+            'SELECT COLUMN_TYPE, CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS
              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c'
         );
         $stmt->execute([':t' => $table, ':c' => $colonne]);
-        $existe = (int)$stmt->fetchColumn() > 0;
-        $colonnesOk = $colonnesOk && $existe;
-        $addStep("Colonne {$table}.{$colonne}", $existe ? 'ok' : 'ko',
-            $existe ? '' : 'Colonne absente : exécutez dans phpMyAdmin : ' . $migration);
+        $infos = $stmt->fetch();
+
+        if (!$infos) {
+            $colonnesOk = false;
+            $addStep("Colonne {$table}.{$colonne}", 'ko', 'Colonne absente : exécutez dans phpMyAdmin : ' . $migration);
+        } elseif (!$typeOk($infos)) {
+            $colonnesOk = false;
+            $addStep("Colonne {$table}.{$colonne} : {$infos['COLUMN_TYPE']}", 'ko',
+                "Type ou taille incorrects (attendu : {$definition}). Exécutez dans phpMyAdmin : "
+                . "ALTER TABLE {$table} MODIFY {$colonne} {$definition};");
+        } else {
+            $addStep("Colonne {$table}.{$colonne} : {$infos['COLUMN_TYPE']}", 'ok');
+        }
     }
 
     if ($colonnesOk) {
@@ -90,7 +108,7 @@ function runMailDiagnostics(PDO $pdo): array
             $addStep('Test d\'enregistrement d\'une demande Zoom Room', 'ko', $e->getMessage());
         }
     } else {
-        $addStep('Test d\'enregistrement d\'une demande Zoom Room', 'ko', 'Non exécuté : colonnes manquantes (voir ci-dessus).');
+        $addStep('Test d\'enregistrement d\'une demande Zoom Room', 'ko', 'Non exécuté : colonnes manquantes ou incorrectes (voir ci-dessus).');
     }
 
     // ------------------------------------------------------------
