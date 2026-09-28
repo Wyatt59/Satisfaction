@@ -466,7 +466,13 @@ html, body {
 
 /* ---------- Canal Zoom Room : indexzoom.php (formulaire seul, centré) ---------- */
 
-.zoom-wrapper { justify-content: center; }
+.zoom-wrapper {
+    justify-content: center;
+    align-items: flex-start;
+    height: auto; /* pas de clavier virtuel à réserver : le panneau prend la hauteur de son contenu */
+    padding-top: 40px;
+}
+.zoom-wrapper .touch-input { -webkit-user-select: text; user-select: text; }
 .zoom-wrapper .form-panel { flex: 0 1 760px; }
 
 /* ---------- Canal Zoom Room : reponsesatisfaction.php (lien reçu par e-mail) ---------- */

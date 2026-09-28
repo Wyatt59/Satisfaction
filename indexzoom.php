@@ -28,6 +28,7 @@ require_once __DIR__ . '/config.php';
 <a href="stats.php" id="stats-link" class="stats-link hidden" title="Statistiques">📊</a>
 <a href="confidentialite.php" class="rgpd-link" title="Confidentialité des données (RGPD)">🔒 Confidentialité</a>
 
+<!-- Pas de clavier virtuel : saisie au clavier physique du poste -->
 <div class="kiosk-wrapper zoom-wrapper">
 
     <!-- ============ NOUVELLE DEMANDE (pas de liste des demandes en attente) ============ -->
@@ -39,19 +40,19 @@ require_once __DIR__ . '/config.php';
 
             <div class="field" id="field-nom">
                 <label for="nom_utilisateur">Nom de l'utilisateur</label>
-                <input type="text" id="nom_utilisateur" class="touch-input" autocomplete="off" readonly>
+                <input type="text" id="nom_utilisateur" class="touch-input" autocomplete="off">
                 <div id="nom-ad-status" class="ad-status"></div>
             </div>
 
             <div class="field" id="field-agent">
                 <label for="numero_agent">Numéro d'agent (5 chiffres)</label>
-                <input type="text" id="numero_agent" class="touch-input" autocomplete="off" readonly maxlength="5" inputmode="numeric">
+                <input type="text" id="numero_agent" class="touch-input" autocomplete="off" maxlength="5" inputmode="numeric">
             </div>
 
             <div class="field">
                 <label for="service">Service <span class="hint">(Saisissez "Autre" si il ne s'affiche pas)</span></label>
                 <div class="combo-wrapper">
-                    <input type="text" id="service" class="touch-input" autocomplete="off" readonly
+                    <input type="text" id="service" class="touch-input" autocomplete="off"
                            placeholder="Rechercher un service...">
                     <div id="service-suggestions" class="suggestions hidden"></div>
                 </div>
@@ -77,7 +78,7 @@ require_once __DIR__ . '/config.php';
                     </div>
                     <div class="motif-detail">
                         <label for="detail_demande" class="detail-label">Détail <span class="hint">(facultatif)</span></label>
-                        <textarea id="detail_demande" class="touch-input touch-textarea" readonly
+                        <textarea id="detail_demande" class="touch-input touch-textarea"
                                   data-label="Détail de la demande" placeholder="Précisez si besoin..."></textarea>
                     </div>
                 </div>
@@ -96,16 +97,6 @@ require_once __DIR__ . '/config.php';
         </div>
     </div>
 
-</div>
-
-<!-- ============ CLAVIER VIRTUEL ============ -->
-<div id="virtual-keyboard" class="keyboard hidden">
-    <div class="keyboard-target-label">Saisie : <span id="kb-target-label">-</span></div>
-    <div class="kb-row" id="kb-row-numbers"></div>
-    <div class="kb-row" id="kb-row-1"></div>
-    <div class="kb-row" id="kb-row-2"></div>
-    <div class="kb-row" id="kb-row-3"></div>
-    <div class="kb-row kb-row-actions" id="kb-row-actions"></div>
 </div>
 
 <script src="assets/js/app.js"></script>

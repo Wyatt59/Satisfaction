@@ -49,6 +49,9 @@
     // Mode Zoom Room (indexzoom.php) : pas de liste des demandes en attente,
     // enregistrement via une API dédiée puis redirection éventuelle.
     const zoomMode = document.body.dataset.mode === 'zoom';
+
+    // Clavier virtuel absent (indexzoom.php) : saisie au clavier physique.
+    const keyboardEl = document.getElementById('virtual-keyboard');
     const submitUrl = zoomMode ? 'api/submit_request_zoom.php' : 'api/submit_request.php';
 
     // commentInput n'existe pas sur indexzoom.php (pas de clôture sur place)
@@ -74,8 +77,10 @@
         activeInput = input;
         input.classList.add('active-field');
         const label = input.dataset.label || (input.previousElementSibling ? input.previousElementSibling.textContent : '');
-        document.getElementById('kb-target-label').textContent = label;
-        showKeyboard();
+        if (keyboardEl) {
+            document.getElementById('kb-target-label').textContent = label;
+            showKeyboard();
+        }
 
         if (input === serviceInput) {
             renderServiceSuggestions(serviceInput.value);
@@ -344,7 +349,6 @@
     // ============================================================
     // Clavier virtuel tactile (AZERTY)
     // ============================================================
-    const keyboardEl = document.getElementById('virtual-keyboard');
     let shiftOn = false;
 
     const rowNumbers = ['1','2','3','4','5','6','7','8','9','0'];
@@ -533,12 +537,28 @@
     }
 
     function showKeyboard() {
-        keyboardEl.classList.remove('hidden');
+        if (keyboardEl) keyboardEl.classList.remove('hidden');
     }
 
     function hideKeyboard() {
-        keyboardEl.classList.add('hidden');
+        if (keyboardEl) keyboardEl.classList.add('hidden');
     }
 
-    renderKeyboard();
+    if (keyboardEl) {
+        renderKeyboard();
+    } else {
+        // Saisie au clavier physique : mêmes règles que le clavier virtuel
+        // (numéro d'agent limité à 5 chiffres, recherche AD, suggestions de service).
+        textInputs.forEach(input => {
+            input.addEventListener('focus', () => setActiveInput(input));
+        });
+
+        agentInput.addEventListener('input', () => {
+            const chiffres = agentInput.value.replace(/[^0-9]/g, '').slice(0, 5);
+            if (chiffres !== agentInput.value) agentInput.value = chiffres;
+            handleAgentNumberChanged();
+        });
+
+        serviceInput.addEventListener('input', refreshServiceSuggestionsIfNeeded);
+    }
 })();
