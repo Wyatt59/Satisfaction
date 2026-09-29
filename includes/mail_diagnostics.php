@@ -99,20 +99,20 @@ function runMailDiagnostics(PDO $pdo): array
             );
             $stmt->execute([':site_id' => $site['id'], ':token' => bin2hex(random_bytes(32))]);
             $pdo->rollBack();
-            $addStep('Test d\'enregistrement d\'une demande Zoom Room (annulé aussitôt)', 'ok',
+            $addStep('Test d\'enregistrement d\'une demande Zoom (annulé aussitôt)', 'ok',
                 'Site utilisé : ' . SITE_ZOOMROOM_NOM . ' (id ' . $site['id'] . ').');
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            $addStep('Test d\'enregistrement d\'une demande Zoom Room', 'ko', $e->getMessage());
+            $addStep('Test d\'enregistrement d\'une demande Zoom', 'ko', $e->getMessage());
         }
     } else {
-        $addStep('Test d\'enregistrement d\'une demande Zoom Room', 'ko', 'Non exécuté : colonnes manquantes ou incorrectes (voir ci-dessus).');
+        $addStep('Test d\'enregistrement d\'une demande Zoom', 'ko', 'Non exécuté : colonnes manquantes ou incorrectes (voir ci-dessus).');
     }
 
     // ------------------------------------------------------------
-    $section('Configuration du canal Zoom Room');
+    $section('Configuration du canal Zoom');
 
     $lienBrut = null;
     try {
@@ -146,7 +146,7 @@ function runMailDiagnostics(PDO $pdo): array
     $baseUrlCalculee = getAppBaseUrlDepuisPage();
     if ($baseUrl === '') {
         $addStep('URL publique APP_BASE_URL (config.php)', 'warn',
-            'Non définie : le lien de l\'e-mail sera déduit de l\'adresse utilisée sur le poste Zoom Room, par exemple '
+            'Non définie : le lien de l\'e-mail sera déduit de l\'adresse utilisée sur le poste Zoom, par exemple '
             . $baseUrlCalculee . '/reponsesatisfaction.php?token=… Vérifiez qu\'elle est accessible depuis le poste des agents, sinon définissez APP_BASE_URL.');
     } elseif (!filter_var($baseUrl, FILTER_VALIDATE_URL)) {
         $addStep('URL publique APP_BASE_URL : ' . $baseUrl, 'ko', 'URL invalide (ex. https://support.exemple.fr/satisfaction).');

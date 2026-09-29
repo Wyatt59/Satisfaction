@@ -81,7 +81,7 @@ function h(?string $value): string
         <div id="reponse-question" data-token="<?= h($token) ?>">
             <p class="reponse-intro">
                 Bonjour <strong><?= h($demande['nom_utilisateur']) ?></strong>,<br>
-                vous nous avez sollicités par le canal Zoom Room le
+                vous nous avez sollicités par le canal Zoom le
                 <?= h(date('d/m/Y', strtotime($demande['date_creation']))) ?> à
                 <?= h(date('H:i', strtotime($demande['date_creation']))) ?>
                 (<?= h($labelsMotif[$demande['motif']] ?? $demande['motif']) ?>).

@@ -59,7 +59,7 @@ function niveauIcone(string $level): string
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Test du canal Zoom Room (e-mail)</title>
+<title>Test du canal Zoom (e-mail)</title>
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="alternate icon" href="assets/img/favicon.ico">
 <link rel="stylesheet" href="assets/css/stats.css">
@@ -70,7 +70,7 @@ function niveauIcone(string $level): string
 <div class="stats-wrapper">
 
     <header class="stats-header">
-        <h1>✉️ Test du canal Zoom Room (e-mail)</h1>
+        <h1>✉️ Test du canal Zoom (e-mail)</h1>
         <a href="indexzoom.php" class="btn-back">← Retour à indexzoom.php</a>
     </header>
 
@@ -124,7 +124,7 @@ function niveauIcone(string $level): string
 
     <div class="table-card ad-search-card">
         <h2>Envoyer un e-mail de test</h2>
-        <p class="ad-filter">Envoie le même e-mail que celui reçu par un demandeur Zoom Room.</p>
+        <p class="ad-filter">Envoie le même e-mail que celui reçu par un demandeur Zoom.</p>
 
         <form method="post" class="ad-search-form">
             <?php if ($numeroAgentTest !== '' && !$agentInvalide): ?>
