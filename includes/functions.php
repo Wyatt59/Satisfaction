@@ -215,7 +215,7 @@ function envoyerMailSatisfactionZoom(string $destinataire, string $nom, string $
         ? MAIL_FROM
         : 'no-reply@' . preg_replace('/:\d+$/', '', (string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
 
-    $sujet = mb_encode_mimeheader('Votre avis sur notre intervention Zoom Room', 'UTF-8', 'B');
+    $sujet = mb_encode_mimeheader('Votre avis sur notre intervention Zoom', 'UTF-8', 'B');
 
     $nomHtml  = htmlspecialchars($nom, ENT_QUOTES, 'UTF-8');
     $lienHtml = htmlspecialchars($lienReponse, ENT_QUOTES, 'UTF-8');
@@ -226,7 +226,7 @@ function envoyerMailSatisfactionZoom(string $destinataire, string $nom, string $
         '<html lang="fr"><head><meta charset="UTF-8"></head>',
         '<body style="font-family:Segoe UI,Arial,sans-serif;font-size:15px;color:#26313f;line-height:1.6;">',
         '<p>Bonjour ' . $nomHtml . ',</p>',
-        '<p>Vous nous avez sollicités par le canal Zoom Room.</p>',
+        '<p>Vous nous avez sollicités par le canal Zoom.</p>',
         '<p>Ayant pour objectif de nous améliorer, nous vous sollicitons pour vous exprimer sur la qualité de notre service :</p>',
         '<p><a href="' . $lienHtml . '" style="display:inline-block;padding:10px 20px;background:#1e6fea;'
             . 'color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">Donner mon avis</a></p>',

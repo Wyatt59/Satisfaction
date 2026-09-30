@@ -135,6 +135,15 @@ $siteConfigure = siteEstConfigure($siteActuel);
     <div class="kb-row kb-row-actions" id="kb-row-actions"></div>
 </div>
 
+<!-- Attente pendant la recherche de l'agent dans l'annuaire (AD) -->
+<div id="ad-wait-overlay" class="overlay hidden" role="alertdialog" aria-live="assertive">
+    <div class="overlay-card">
+        <div class="ad-wait-spinner"></div>
+        <div class="overlay-text">Recherche de vos informations dans l'annuaire…</div>
+        <div class="ad-wait-hint">Merci de patienter.</div>
+    </div>
+</div>
+
 <!-- Confirmation de clôture -->
 <div id="close-overlay" class="overlay hidden">
     <div class="overlay-card">

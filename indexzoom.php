@@ -16,7 +16,7 @@ require_once __DIR__ . '/config.php';
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Demande Zoom Room - Support informatique</title>
+<title>Demande Zoom - Support informatique</title>
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="alternate icon" href="assets/img/favicon.ico">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
@@ -34,7 +34,7 @@ require_once __DIR__ . '/config.php';
     <!-- ============ NOUVELLE DEMANDE (pas de liste des demandes en attente) ============ -->
     <div class="panel form-panel">
         <div class="panel-header header-blue">
-            <span class="header-icon">🎥</span> Nouvelle demande Zoom Room
+            <span class="header-icon">🎥</span> Nouvelle demande Zoom
         </div>
         <div class="panel-body">
 
@@ -97,6 +97,15 @@ require_once __DIR__ . '/config.php';
         </div>
     </div>
 
+</div>
+
+<!-- Attente pendant la recherche de l'agent dans l'annuaire (AD) -->
+<div id="ad-wait-overlay" class="overlay hidden" role="alertdialog" aria-live="assertive">
+    <div class="overlay-card">
+        <div class="ad-wait-spinner"></div>
+        <div class="overlay-text">Recherche de vos informations dans l'annuaire…</div>
+        <div class="ad-wait-hint">Merci de patienter.</div>
+    </div>
 </div>
 
 <script src="assets/js/app.js"></script>
