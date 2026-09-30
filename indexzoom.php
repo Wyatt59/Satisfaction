@@ -99,6 +99,15 @@ require_once __DIR__ . '/config.php';
 
 </div>
 
+<!-- Attente pendant la recherche de l'agent dans l'annuaire (AD) -->
+<div id="ad-wait-overlay" class="overlay hidden" role="alertdialog" aria-live="assertive">
+    <div class="overlay-card">
+        <div class="ad-wait-spinner"></div>
+        <div class="overlay-text">Recherche de vos informations dans l'annuaire…</div>
+        <div class="ad-wait-hint">Merci de patienter.</div>
+    </div>
+</div>
+
 <script src="assets/js/app.js"></script>
 </body>
 </html>

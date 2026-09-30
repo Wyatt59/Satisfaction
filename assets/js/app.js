@@ -404,8 +404,35 @@
         // se masque tant que l'appartenance au groupe n'a pas été reconfirmée.
         hideStatsLink();
 
+        // Numéro modifié : la recherche en cours (s'il y en a une) devient obsolète.
+        adLookupSeq++;
+        hideAdWait();
+
         if (agentInput.value.length === 5) {
             lookupAgent(agentInput.value);
+        }
+    }
+
+    // ------------------------------------------------------------
+    // Fenêtre d'attente pendant la recherche dans l'annuaire (AD)
+    // ------------------------------------------------------------
+    const adWaitOverlay = document.getElementById('ad-wait-overlay');
+    const AD_WAIT_MIN_MS = 500;    // évite un simple flash si l'AD répond très vite
+    const AD_WAIT_MAX_MS = 10000;  // au-delà : abandon et saisie manuelle
+    let adLookupSeq = 0;           // identifie la recherche en cours
+    let adDisponible = false;      // renseigné au chargement (api/ad_status.php)
+
+    function showAdWait() {
+        // AD désactivé ou injoignable : réponse immédiate, pas de fenêtre d'attente
+        if (!adDisponible) return;
+        if (adWaitOverlay) adWaitOverlay.classList.remove('hidden');
+        btnValider.disabled = true;
+    }
+
+    function hideAdWait() {
+        if (adWaitOverlay && !adWaitOverlay.classList.contains('hidden')) {
+            adWaitOverlay.classList.add('hidden');
+            btnValider.disabled = false;
         }
     }
 
@@ -427,6 +454,7 @@
             .then(r => r.json())
             .then(res => {
                 if (res.success && res.available) {
+                    adDisponible = true;
                     const fieldAgent = document.getElementById('field-agent');
                     const fieldNom = document.getElementById('field-nom');
                     if (fieldAgent && fieldNom && fieldAgent.parentNode) {
@@ -439,11 +467,19 @@
     checkAdAvailabilityAndReorderFields();
 
     function lookupAgent(numeroAgent) {
-        fetch('api/lookup_agent.php?numero_agent=' + encodeURIComponent(numeroAgent))
+        const seq = adLookupSeq;
+        const debut = Date.now();
+        const controller = window.AbortController ? new AbortController() : null;
+        const abandon = setTimeout(() => { if (controller) controller.abort(); }, AD_WAIT_MAX_MS);
+
+        showAdWait();
+
+        fetch('api/lookup_agent.php?numero_agent=' + encodeURIComponent(numeroAgent),
+              controller ? { signal: controller.signal } : {})
             .then(r => r.json())
             .then(res => {
                 // numéro d'agent modifié entre-temps : on ignore la réponse obsolète
-                if (agentInput.value !== numeroAgent) return;
+                if (seq !== adLookupSeq || agentInput.value !== numeroAgent) return;
 
                 if (!res.success || !res.available) {
                     // AD indisponible : le formulaire reste en saisie manuelle, comme d'habitude
@@ -476,7 +512,17 @@
                     showStatsLink();
                 }
             })
-            .catch(() => setAdStatus(''));
+            .catch(() => {
+                // AD trop lent (abandon après AD_WAIT_MAX_MS) ou erreur : saisie manuelle
+                if (seq === adLookupSeq) setAdStatus('');
+            })
+            .finally(() => {
+                clearTimeout(abandon);
+                const reste = Math.max(0, AD_WAIT_MIN_MS - (Date.now() - debut));
+                setTimeout(() => {
+                    if (seq === adLookupSeq) hideAdWait();
+                }, reste);
+            });
     }
 
     function refreshServiceSuggestionsIfNeeded() {
