@@ -296,17 +296,17 @@ demande (annulé aussitôt), `lienzoomroom`, `MAIL_FROM`, `APP_BASE_URL` et para
 d'un agent dans l'AD et d'envoyer un e-mail de test. Accessible via le lien « ✉️ Test e-mail » de la
 page Statistiques. À protéger ou supprimer après la mise en service, comme `ad_test.php`.
 
-## Envoi des demandes de la borne à GLPI (`index.php`)
+## Envoi des demandes à GLPI (`index.php` et `indexzoom.php`)
 
-À la validation d'une demande sur la borne, un e-mail peut être envoyé au collecteur de GLPI pour créer
-un ticket (`api/submit_request.php`) :
+À la validation d'une demande, sur la borne comme sur `indexzoom.php`, un e-mail peut être envoyé au
+collecteur de GLPI pour créer un ticket (`api/submit_request.php` et `api/submit_request_zoom.php`) :
 
 - activation : `ad_config.mailglpiactif` (1 = activé, 0 = désactivé) ;
 - destinataire : `ad_config.mailglpi` ;
 - expéditeur : l'adresse e-mail de l'agent lue dans l'AD (attribut `mail`), pour que GLPI rattache le
   ticket au demandeur ; à défaut, `MAIL_FROM` de `config.php` ;
 - pas d'objet ; le corps commence par la source entre parenthèses (« SAS » + nom du site, ex.
-  `(SAS Lille)`), puis le motif, le nom, le numéro d'agent, le service et le détail s'il est renseigné.
+  `(SAS Lille)`, ou `(SAS Zoom)` pour `indexzoom.php`), puis le motif, le nom, le numéro d'agent, le service et le détail s'il est renseigné.
 
 Un échec d'envoi n'empêche pas l'enregistrement de la demande (l'erreur est notée dans le journal PHP).
 Migration : voir « Envoi des demandes de la borne à GLPI » en fin de `schema.sql`. `test_mail.php` vérifie
