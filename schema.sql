@@ -155,12 +155,13 @@ ON DUPLICATE KEY UPDATE id = id;
 -- UPDATE ad_config SET lienzoomroom = 'https://intranet.exemple.fr/page-apres-zoom' WHERE id = 1;
 
 -- ============================================================
--- Envoi des demandes de la borne à GLPI (index.php)
+-- Envoi des demandes à GLPI (index.php et indexzoom.php)
 -- ============================================================
--- À la validation d'une demande sur la borne, si ad_config.mailglpiactif = 1,
+-- À la validation d'une demande (borne ou Zoom), si ad_config.mailglpiactif = 1,
 -- un e-mail est envoyé à l'adresse ad_config.mailglpi (collecteur GLPI). Son
 -- expéditeur est l'adresse de l'agent lue dans l'AD (à défaut : MAIL_FROM de
--- config.php) ; le corps commence par la source, ex. "(SAS Lille)".
+-- config.php) ; le corps commence par la source, ex. "(SAS Lille)" pour la
+-- borne de Lille ou "(SAS Zoom)" pour indexzoom.php.
 
 -- Migration pour une installation déjà existante (envoi à GLPI) :
 -- ALTER TABLE ad_config ADD COLUMN mailglpi VARCHAR(255) NULL AFTER lienzoomroom;

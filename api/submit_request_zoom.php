@@ -95,6 +95,27 @@ if ($email !== null) {
     error_log("Zoom Room : adresse e-mail introuvable dans l'AD pour l'agent {$agent} (demande #{$id}).");
 }
 
+// Envoi de la demande à GLPI par e-mail, si activé (ad_config.mailglpiactif),
+// comme sur la borne (api/submit_request.php), avec la source « SAS Zoom ».
+$mailGlpi = null;
+$glpi = getConfigGlpi($pdo);
+if ($glpi['actif']) {
+    try {
+        $mailGlpi = envoyerMailGlpi(
+            $glpi['adresse'],
+            $email ?? getMailFromParDefaut(),
+            'SAS Zoom',
+            ['nom_utilisateur' => $nom, 'numero_agent' => $agent, 'service' => $service, 'motif' => $motif, 'detail' => $detail]
+        );
+    } catch (Throwable $e) {
+        $mailGlpi = false;
+        error_log("GLPI : erreur lors de l'envoi de l'e-mail (demande Zoom Room #{$id}) : " . $e->getMessage());
+    }
+    if (!$mailGlpi) {
+        error_log("GLPI : échec de l'envoi de l'e-mail (demande Zoom Room #{$id}).");
+    }
+}
+
 try {
     $redirect = getLienZoomRoom($pdo);
 } catch (Throwable $e) {
@@ -105,5 +126,6 @@ echo json_encode([
     'success'     => true,
     'id'          => $id,
     'mail_envoye' => $mailEnvoye,
+    'mail_glpi'   => $mailGlpi, // null = envoi à GLPI désactivé
     'redirect'    => $redirect,
 ]);

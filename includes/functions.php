@@ -284,7 +284,7 @@ function getMailFromParDefaut(): string
 
 /**
  * Envoie une demande à GLPI par e-mail. Le corps commence par la source
- * entre parenthèses (ex. "(SAS Lille)"), suivie des informations saisies ;
+ * entre parenthèses (ex. "(SAS Lille)" sur la borne, "(SAS Zoom)" sur indexzoom.php), suivie des informations saisies ;
  * pas d'objet. L'expéditeur est l'adresse de l'agent (lue dans l'AD) afin que
  * GLPI rattache le ticket au demandeur. Retourne true si mail() a accepté le message.
  *

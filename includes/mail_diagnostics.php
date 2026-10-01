@@ -156,7 +156,7 @@ function runMailDiagnostics(PDO $pdo): array
     }
 
     // ------------------------------------------------------------
-    $section('Envoi des demandes de la borne à GLPI (index.php)');
+    $section('Envoi des demandes à GLPI (index.php et indexzoom.php)');
 
     $colonnesGlpi = [
         'mailglpi'      => 'ALTER TABLE ad_config ADD COLUMN mailglpi VARCHAR(255) NULL AFTER lienzoomroom;',
