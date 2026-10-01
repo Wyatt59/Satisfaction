@@ -48,6 +48,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['envoyer'])) {
     }
 }
 
+// --- Envoi d'une demande de test à GLPI ---
+$envoiGlpi = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['envoyer_glpi'])) {
+    $glpi = getConfigGlpi($pdo);
+    if ($glpi['adresse'] === null) {
+        $envoiGlpi = ['ok' => false, 'detail' => 'Adresse GLPI (ad_config.mailglpi) absente ou invalide.'];
+    } else {
+        $expediteur = $emailAgent ?? getMailFromParDefaut();
+        error_clear_last();
+        try {
+            $ok = envoyerMailGlpi($glpi['adresse'], $expediteur, 'SAS Test', [
+                'nom_utilisateur' => 'TEST - à ignorer',
+                'numero_agent'    => $numeroAgentTest !== '' ? $numeroAgentTest : '00000',
+                'service'         => 'Test',
+                'motif'           => 'autre',
+                'detail'          => 'Message de test envoyé depuis test_mail.php',
+            ]);
+            $erreur = error_get_last();
+            $envoiGlpi = [
+                'ok'     => $ok,
+                'detail' => $ok
+                    ? "mail() a accepté le message envoyé à {$glpi['adresse']} depuis {$expediteur}. Vérifiez la création du ticket dans GLPI (puis supprimez-le)."
+                    : 'mail() a refusé le message' . ($erreur ? ' : ' . $erreur['message'] : '.'),
+            ];
+        } catch (Throwable $e) {
+            $envoiGlpi = ['ok' => false, 'detail' => 'Erreur PHP : ' . $e->getMessage()];
+        }
+    }
+}
+
 function niveauIcone(string $level): string
 {
     $icones = ['ok' => '✓', 'warn' => '!', 'ko' => '✕'];
@@ -138,6 +168,26 @@ function niveauIcone(string $level): string
         <?php if ($envoi !== null): ?>
             <p class="<?= $envoi['ok'] ? 'ad-success' : 'ad-error' ?>">
                 <?= $envoi['ok'] ? '✓' : '✕' ?> <?= htmlspecialchars($envoi['detail']) ?>
+            </p>
+        <?php endif; ?>
+    </div>
+
+    <div class="table-card ad-search-card">
+        <h2>Envoyer une demande de test à GLPI</h2>
+        <p class="ad-filter">Envoie à l'adresse <code>ad_config.mailglpi</code> le même e-mail qu'une demande
+            de la borne (source « SAS Test »), même si l'envoi est désactivé. L'expéditeur est l'adresse
+            de l'agent recherché ci-dessus, sinon <code>MAIL_FROM</code>. Un ticket sera créé dans GLPI.</p>
+
+        <form method="post" class="ad-search-form">
+            <?php if ($numeroAgentTest !== '' && !$agentInvalide): ?>
+                <input type="hidden" name="numero_agent" value="<?= htmlspecialchars($numeroAgentTest) ?>">
+            <?php endif; ?>
+            <button type="submit" name="envoyer_glpi" value="1">Envoyer à GLPI</button>
+        </form>
+
+        <?php if ($envoiGlpi !== null): ?>
+            <p class="<?= $envoiGlpi['ok'] ? 'ad-success' : 'ad-error' ?>">
+                <?= $envoiGlpi['ok'] ? '✓' : '✕' ?> <?= htmlspecialchars($envoiGlpi['detail']) ?>
             </p>
         <?php endif; ?>
     </div>
