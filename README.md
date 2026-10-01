@@ -295,3 +295,19 @@ demande (annulé aussitôt), `lienzoomroom`, `MAIL_FROM`, `APP_BASE_URL` et para
 `php.ini` (connexion au serveur SMTP sous Windows). Elle permet aussi de retrouver l'adresse e-mail
 d'un agent dans l'AD et d'envoyer un e-mail de test. Accessible via le lien « ✉️ Test e-mail » de la
 page Statistiques. À protéger ou supprimer après la mise en service, comme `ad_test.php`.
+
+## Envoi des demandes de la borne à GLPI (`index.php`)
+
+À la validation d'une demande sur la borne, un e-mail peut être envoyé au collecteur de GLPI pour créer
+un ticket (`api/submit_request.php`) :
+
+- activation : `ad_config.mailglpiactif` (1 = activé, 0 = désactivé) ;
+- destinataire : `ad_config.mailglpi` ;
+- expéditeur : l'adresse e-mail de l'agent lue dans l'AD (attribut `mail`), pour que GLPI rattache le
+  ticket au demandeur ; à défaut, `MAIL_FROM` de `config.php` ;
+- pas d'objet ; le corps commence par la source entre parenthèses (« SAS » + nom du site, ex.
+  `(SAS Lille)`), puis le motif, le nom, le numéro d'agent, le service et le détail s'il est renseigné.
+
+Un échec d'envoi n'empêche pas l'enregistrement de la demande (l'erreur est notée dans le journal PHP).
+Migration : voir « Envoi des demandes de la borne à GLPI » en fin de `schema.sql`. `test_mail.php` vérifie
+la configuration et permet d'envoyer une demande de test à GLPI.

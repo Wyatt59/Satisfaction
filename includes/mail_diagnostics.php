@@ -156,6 +156,44 @@ function runMailDiagnostics(PDO $pdo): array
     }
 
     // ------------------------------------------------------------
+    $section('Envoi des demandes de la borne à GLPI (index.php)');
+
+    $colonnesGlpi = [
+        'mailglpi'      => 'ALTER TABLE ad_config ADD COLUMN mailglpi VARCHAR(255) NULL AFTER lienzoomroom;',
+        'mailglpiactif' => 'ALTER TABLE ad_config ADD COLUMN mailglpiactif TINYINT(1) NOT NULL DEFAULT 0 AFTER mailglpi;',
+    ];
+    $colonnesGlpiOk = true;
+    foreach ($colonnesGlpi as $colonne => $migration) {
+        $stmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ad_config' AND COLUMN_NAME = :c"
+        );
+        $stmt->execute([':c' => $colonne]);
+        $existe = (int)$stmt->fetchColumn() > 0;
+        $colonnesGlpiOk = $colonnesGlpiOk && $existe;
+        $addStep("Colonne ad_config.{$colonne}", $existe ? 'ok' : 'ko',
+            $existe ? '' : 'Colonne absente : exécutez dans phpMyAdmin : ' . $migration);
+    }
+
+    if ($colonnesGlpiOk) {
+        $cfgGlpi = $pdo->query('SELECT mailglpi, mailglpiactif FROM ad_config WHERE id = 1')->fetch() ?: [];
+        $actif = (int)($cfgGlpi['mailglpiactif'] ?? 0) === 1;
+        $adresseGlpi = trim((string)($cfgGlpi['mailglpi'] ?? ''));
+
+        $addStep('Envoi à GLPI activé (ad_config.mailglpiactif = 1)', $actif ? 'ok' : 'warn',
+            $actif ? '' : 'Désactivé : aucun e-mail n\'est envoyé à GLPI. Passez mailglpiactif à 1 pour l\'activer.');
+
+        if ($adresseGlpi === '') {
+            $addStep('Adresse GLPI (ad_config.mailglpi)', $actif ? 'ko' : 'warn', 'Non renseignée.');
+        } elseif (!filter_var($adresseGlpi, FILTER_VALIDATE_EMAIL)) {
+            $addStep('Adresse GLPI (ad_config.mailglpi) : ' . $adresseGlpi, 'ko', 'Adresse e-mail invalide.');
+        } else {
+            $addStep('Adresse GLPI (ad_config.mailglpi) : ' . $adresseGlpi, 'ok',
+                'Expéditeur : adresse de l\'agent lue dans l\'AD (à défaut : MAIL_FROM).');
+        }
+    }
+
+    // ------------------------------------------------------------
     $section('Envoi d\'e-mail (php.ini)');
 
     if (PHP_OS_FAMILY === 'Windows') {

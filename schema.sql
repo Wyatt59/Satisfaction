@@ -84,7 +84,9 @@ CREATE TABLE IF NOT EXISTS ad_config (
     name_attribute     VARCHAR(100) NOT NULL DEFAULT 'displayName',
     affichage_stat     VARCHAR(100) NULL,
     service_attribute  VARCHAR(100) NOT NULL DEFAULT 'ExtensionName',
-    lienzoomroom       VARCHAR(500) NULL
+    lienzoomroom       VARCHAR(500) NULL,
+    mailglpi           VARCHAR(255) NULL,
+    mailglpiactif      TINYINT(1)   NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO ad_config (id, actif, host, port, use_tls, base_dn, bind_dn, bind_password_md5, agent_attribute, name_attribute, affichage_stat, service_attribute)
@@ -151,6 +153,19 @@ ON DUPLICATE KEY UPDATE id = id;
 -- ALTER TABLE demandes ADD UNIQUE KEY uq_token_satisfaction (token_satisfaction);
 -- ALTER TABLE ad_config ADD COLUMN lienzoomroom VARCHAR(500) NULL AFTER service_attribute;
 -- UPDATE ad_config SET lienzoomroom = 'https://intranet.exemple.fr/page-apres-zoom' WHERE id = 1;
+
+-- ============================================================
+-- Envoi des demandes de la borne à GLPI (index.php)
+-- ============================================================
+-- À la validation d'une demande sur la borne, si ad_config.mailglpiactif = 1,
+-- un e-mail est envoyé à l'adresse ad_config.mailglpi (collecteur GLPI). Son
+-- expéditeur est l'adresse de l'agent lue dans l'AD (à défaut : MAIL_FROM de
+-- config.php) ; le corps commence par la source, ex. "(SAS Lille)".
+
+-- Migration pour une installation déjà existante (envoi à GLPI) :
+-- ALTER TABLE ad_config ADD COLUMN mailglpi VARCHAR(255) NULL AFTER lienzoomroom;
+-- ALTER TABLE ad_config ADD COLUMN mailglpiactif TINYINT(1) NOT NULL DEFAULT 0 AFTER mailglpi;
+-- UPDATE ad_config SET mailglpi = 'glpi@exemple.fr', mailglpiactif = 1 WHERE id = 1;
 
 -- Exemple de compte MySQL dédié (à adapter / sécuriser en production)
 -- CREATE USER 'kiosk_user'@'localhost' IDENTIFIED BY 'change_moi';

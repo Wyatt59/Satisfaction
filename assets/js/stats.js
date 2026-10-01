@@ -18,7 +18,7 @@
 
     let periodesParAnnee = {};   // { '2026': [1,2,3,...], ... }
     let currentDemandes = [];
-    let currentSort = { key: 'date_creation', dir: 'asc' };
+    let currentSort = { key: 'date_creation', dir: 'desc' };
     let currentSiteId = 'all';
 
     // ============================================================

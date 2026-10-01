@@ -211,9 +211,7 @@ function getAppBaseUrl(): string
  */
 function envoyerMailSatisfactionZoom(string $destinataire, string $nom, string $lienReponse): bool
 {
-    $expediteur = defined('MAIL_FROM') && MAIL_FROM !== ''
-        ? MAIL_FROM
-        : 'no-reply@' . preg_replace('/:\d+$/', '', (string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
+    $expediteur = getMailFromParDefaut();
 
     $sujet = mb_encode_mimeheader('Votre avis sur notre intervention Zoom', 'UTF-8', 'B');
 
@@ -244,4 +242,82 @@ function envoyerMailSatisfactionZoom(string $destinataire, string $nom, string $
     ];
 
     return @mail($destinataire, $sujet, $corps, $headers);
+}
+
+// ============================================================
+// Envoi des demandes de la borne à GLPI par e-mail
+// ============================================================
+
+/**
+ * Configuration de l'envoi à GLPI (table ad_config) :
+ *  - mailglpiactif : 1 pour activer l'envoi, 0 pour le désactiver,
+ *  - mailglpi      : adresse e-mail du collecteur GLPI.
+ * Retourne 'actif' => false si l'envoi est désactivé, si l'adresse est
+ * vide/invalide ou si les colonnes n'existent pas encore (migration non faite).
+ */
+function getConfigGlpi(PDO $pdo): array
+{
+    try {
+        $cfg = $pdo->query('SELECT mailglpiactif, mailglpi FROM ad_config WHERE id = 1 LIMIT 1')->fetch();
+    } catch (Throwable $e) {
+        return ['actif' => false, 'adresse' => null];
+    }
+
+    $adresse = trim((string)($cfg['mailglpi'] ?? ''));
+    $adresse = filter_var($adresse, FILTER_VALIDATE_EMAIL) ? $adresse : null;
+
+    return [
+        'actif'   => $cfg && (int)$cfg['mailglpiactif'] === 1 && $adresse !== null,
+        'adresse' => $adresse,
+    ];
+}
+
+/**
+ * Adresse d'expédition par défaut (constante MAIL_FROM de config.php).
+ */
+function getMailFromParDefaut(): string
+{
+    return defined('MAIL_FROM') && MAIL_FROM !== ''
+        ? MAIL_FROM
+        : 'no-reply@' . preg_replace('/:\d+$/', '', (string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
+}
+
+/**
+ * Envoie une demande à GLPI par e-mail. Le corps commence par la source
+ * entre parenthèses (ex. "(SAS Lille)"), suivie des informations saisies ;
+ * pas d'objet. L'expéditeur est l'adresse de l'agent (lue dans l'AD) afin que
+ * GLPI rattache le ticket au demandeur. Retourne true si mail() a accepté le message.
+ *
+ * $demande : nom_utilisateur, numero_agent, service, motif, detail (ou null).
+ */
+function envoyerMailGlpi(string $destinataire, string $expediteur, string $source, array $demande): bool
+{
+    $labelsMotif = [
+        'materiel' => 'Problème matériel',
+        'logiciel' => 'Problème logiciel',
+        'autre'    => 'Autre',
+    ];
+
+    $lignes = [
+        '(' . $source . ')',
+        $labelsMotif[$demande['motif']] ?? (string)$demande['motif'],
+        'Nom : ' . $demande['nom_utilisateur'],
+        'Numéro d\'agent : ' . $demande['numero_agent'],
+        'Service : ' . $demande['service'],
+    ];
+    if (($demande['detail'] ?? null) !== null && $demande['detail'] !== '') {
+        $lignes[] = 'Détail : ' . $demande['detail'];
+    }
+
+    // Retours à la ligne normalisés (le détail saisi peut en contenir).
+    $corps = preg_replace('/\r\n|\r|\n/', "\r\n", implode("\n", $lignes));
+
+    $headers = [
+        'From'                      => $expediteur,
+        'MIME-Version'              => '1.0',
+        'Content-Type'              => 'text/plain; charset=UTF-8',
+        'Content-Transfer-Encoding' => '8bit',
+    ];
+
+    return @mail($destinataire, '', $corps, $headers);
 }

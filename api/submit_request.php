@@ -4,6 +4,7 @@ declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/ldap_auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -57,7 +58,35 @@ $stmt->execute([
     ':site_id' => $siteActuel['id'],
 ]);
 
+$id = (int)$pdo->lastInsertId();
+
+// Envoi de la demande à GLPI par e-mail, si activé (ad_config.mailglpiactif).
+// La demande est déjà enregistrée : un échec d'envoi ne fait pas échouer la validation.
+$mailGlpi = null;
+$glpi = getConfigGlpi($pdo);
+if ($glpi['actif']) {
+    try {
+        $emailAgent = preg_match('/^[0-9]{5}$/', $agent) ? lookupAgentEmailInActiveDirectory($pdo, $agent) : null;
+        if ($emailAgent === null) {
+            error_log("GLPI : adresse e-mail introuvable dans l'AD pour l'agent {$agent} (demande #{$id}), envoi depuis MAIL_FROM.");
+        }
+        $mailGlpi = envoyerMailGlpi(
+            $glpi['adresse'],
+            $emailAgent ?? getMailFromParDefaut(),
+            'SAS ' . $siteActuel['nom_site'],
+            ['nom_utilisateur' => $nom, 'numero_agent' => $agent, 'service' => $service, 'motif' => $motif, 'detail' => $detail]
+        );
+    } catch (Throwable $e) {
+        $mailGlpi = false;
+        error_log("GLPI : erreur lors de l'envoi de l'e-mail (demande #{$id}) : " . $e->getMessage());
+    }
+    if (!$mailGlpi) {
+        error_log("GLPI : échec de l'envoi de l'e-mail (demande #{$id}).");
+    }
+}
+
 echo json_encode([
-    'success' => true,
-    'id'      => (int)$pdo->lastInsertId(),
+    'success'   => true,
+    'id'        => $id,
+    'mail_glpi' => $mailGlpi, // null = envoi désactivé
 ]);
